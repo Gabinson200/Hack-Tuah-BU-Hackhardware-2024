@@ -69,17 +69,17 @@ reference frame. Yaw is relative if there is no magnetometer present.
 uint8_t broadcastAddress[] = {0x34, 0x85, 0x18, 0x6F, 0xd6, 0x70};
 
 //Device ID (MUST BE UNIQUE)
-#define ID 1
+int ID = 2; //or 1 for lefty
 
 // Structure example to send data
 // Must match the receiver structure
 typedef struct struct_message {
     int id; // must be unique for each sender board
-    float yaw;
-    float pitch;
-    float roll;
-    float x;
-    float y;
+    int yaw;
+    int pitch;
+    int roll;
+    int x;
+    int y;
     bool button;
 } struct_message;
 
@@ -97,9 +97,9 @@ void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
 
 
 /*joystick code*/
-const int joystick_x_pin = A4; //4
-const int joystick_y_pin = A5; //5
-const int joystick_btn = 1; //6 but GPIO 7
+const int joystick_x_pin = 2; //4    1 for left
+const int joystick_y_pin = 1; //5    2 for left
+const int joystick_btn = 42; //6 but GPIO 7  41 for left
 /* Joystick button timing variables */
 unsigned long buttonPressStart = 0;
 bool isButtonPressed = false;
@@ -107,7 +107,7 @@ bool isCollectingData = false;
 const unsigned long buttonHoldTime = 7000; // 7 seconds
 
 
-int const INTERRUPT_PIN = 15;  // Define the interruption #0 pin
+int const INTERRUPT_PIN = 21;  // 4 for left
 bool blinkState;
 
 
@@ -125,7 +125,7 @@ VectorInt16 gy;         // [x, y, z]            Gyro sensor measurements
 VectorInt16 aaReal;     // [x, y, z]            Gravity-free accel sensor measurements
 VectorInt16 aaWorld;    // [x, y, z]            World-frame accel sensor measurements
 VectorFloat gravity;    // [x, y, z]            Gravity vector
-float euler[3];         // [psi, theta, phi]    Euler angle container
+int euler[3];         // [psi, theta, phi]    Euler angle container
 float ypr[3];           // [yaw, pitch, roll]   Yaw/Pitch/Roll container and gravity vector
 
 /*-Packet structure for InvenSense teapot demo-*/ 
@@ -338,7 +338,7 @@ void loop() {
     digitalWrite(LED_BUILTIN, blinkState);
     }
     int x_adc_val, y_adc_val, btn; 
-    float x_volt, y_volt;
+    int x_volt, y_volt;
     x_adc_val = analogRead(joystick_x_pin); 
     y_adc_val = analogRead(joystick_y_pin);
     btn = digitalRead(joystick_btn);
@@ -353,11 +353,11 @@ void loop() {
     Serial.println(y_adc_val);
     Serial.println(btn);
     myData.id = ID;
-    myData.yaw = ypr[0] * 180/M_PI;
-    myData.pitch = ypr[1] * 180/M_PI;
-    myData.roll = ypr[2] * 180/M_PI;
-    myData.x = x_volt;
-    myData.y = y_volt;
+    myData.yaw = (int)(ypr[0] * 180/M_PI);
+    myData.pitch = (int)(ypr[1] * 180/M_PI);
+    myData.roll = (int)(ypr[2] * 180/M_PI);
+    myData.x = x_adc_val;
+    myData.y = y_adc_val;
     myData.button = (btn == LOW);
     esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *) &myData, sizeof(myData));
     delay(100);
